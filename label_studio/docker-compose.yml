@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:11
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  nginx:
+    image: heartexlabs/label-studio:latest
+    ports:
+      - 8080:8085
+      - 8081:8086
+    depends_on:
+      - app
+    environment:
+      - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
+    volumes:
+      - label-studio-data:/label-studio/data:rw
+    command: nginx
+
+  app:
+    stdin_open: true
+    tty: true
+    image: heartexlabs/label-studio:latest
+    expose:
+      - 8000
+    environment:
+      DJANGO_DB: default
+      POSTGRE_NAME: postgres
+      POSTGRE_USER: postgres
+      POSTGRE_PASSWORD:
+      POSTGRE_PORT: 5432
+      POSTGRE_HOST: db
+      LABEL_STUDIO_HOST: ${LABEL_STUDIO_HOST:-}
+      JSON_LOG: 1
+    volumes:
+      - label-studio-data:/label-studio/data:rw
+    command: label-studio-uwsgi
+    restart: always
+
+volumes:
+  db-data:
+  label-studio-data:
+  static: {}
